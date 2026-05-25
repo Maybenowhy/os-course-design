@@ -31,6 +31,7 @@ void os_sem_wait(os_sem_t *sem);
 void os_sem_post(os_sem_t *sem);
 void os_sem_destroy(os_sem_t *sem);
 void os_sleep_ms(int ms);
+unsigned long long os_time_ms(void);
 
 #ifdef __cplusplus
 }

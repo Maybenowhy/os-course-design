@@ -44,9 +44,16 @@ void os_sem_wait(os_sem_t *sem) { WaitForSingleObject(*sem, INFINITE); }
 void os_sem_post(os_sem_t *sem) { ReleaseSemaphore(*sem, 1, NULL); }
 void os_sem_destroy(os_sem_t *sem) { CloseHandle(*sem); }
 void os_sleep_ms(int ms) { Sleep((DWORD)ms); }
+unsigned long long os_time_ms(void) {
+    LARGE_INTEGER freq, counter;
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&counter);
+    return (unsigned long long)(counter.QuadPart * 1000ULL / freq.QuadPart);
+}
 
 #else
 
+#include <sys/time.h>
 #include <unistd.h>
 
 int os_thread_create(os_thread_t *thread, os_thread_func func, void *arg) {
@@ -63,5 +70,10 @@ void os_sem_wait(os_sem_t *sem) { sem_wait(sem); }
 void os_sem_post(os_sem_t *sem) { sem_post(sem); }
 void os_sem_destroy(os_sem_t *sem) { sem_destroy(sem); }
 void os_sleep_ms(int ms) { usleep((useconds_t)ms * 1000); }
+unsigned long long os_time_ms(void) {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (unsigned long long)tv.tv_sec * 1000ULL + (unsigned long long)tv.tv_usec / 1000ULL;
+}
 
 #endif

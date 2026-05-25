@@ -1,6 +1,6 @@
 # 操作系统课程设计 
 
-本工程使用 C 语言完成《操作系统》课程设计中的基础必做部分，包含处理机调度、内存管理、进程同步与并发控制、模拟文件系统四个模块。
+本工程使用 C 语言完成《操作系统》课程设计中的基础必做部分，包含处理机调度、内存管理、进程同步与并发控制、模拟文件系统四个模块，并在进程同步模块补充课程设计提升部分：并发性能优化实验。
 
 ## 已完成内容
 
@@ -26,13 +26,14 @@
 
 ### 3. 进程同步与并发控制
 
-实现了三个经典同步问题：
+实现了三个经典同步问题和一个提升实验：
 
 - 生产者-消费者问题。
 - 读者-写者问题。
 - 哲学家进餐问题。
+- 并发性能优化实验：对比单线程基线、多线程全局互斥锁计数、多线程局部计数后汇总。
 
-程序使用线程、互斥锁和信号量模拟并发执行。为了兼容 Windows MinGW 和 Linux，线程相关代码封装在 `src/platform_thread.c` 和 `src/platform_thread.h` 中：Windows 使用 Win32 API，Linux 使用 pthread/semaphore。
+程序使用线程、互斥锁和信号量模拟并发执行。为了兼容 Windows MinGW 和 Linux，线程相关代码封装在 `src/platform_thread.c` 和 `src/platform_thread.h` 中：Windows 使用 Win32 API，Linux 使用 pthread/semaphore。提升实验通过毫秒级计时统计不同并发计数策略的耗时，体现锁竞争和减少共享写入带来的性能优化效果。
 
 ### 4. 模拟文件系统
 
@@ -63,6 +64,7 @@
 ├── tests/
 │   ├── scheduler_sample.txt
 │   ├── memory_sample.txt
+│   ├── concurrency_perf_sample.txt
 │   ├── filesystem_sample.txt
 │   └── README.md
 ```
@@ -169,11 +171,12 @@ P4 5 4 2
 1. 生产者-消费者
 2. 读者-写者
 3. 哲学家进餐
-4. 运行全部演示
+4. 运行经典同步演示
+5. 并发性能优化实验
 0. 返回上级菜单
 ```
 
-选择 `4` 可以一次运行全部同步演示。由于是真实线程调度，每次输出顺序可能略有不同，但程序应能正常结束，不应死锁。
+选择 `4` 可以一次运行三个经典同步演示。选择 `5` 会运行课程设计提升部分“并发性能优化实验”，输出单线程基线、多线程全局锁计数、多线程局部汇总三种策略的计数结果和耗时。由于是真实线程调度，每次输出顺序和耗时可能略有不同，但程序应能正常结束，不应死锁。
 
 ### 模拟文件系统
 
@@ -203,7 +206,25 @@ P4 5 4 2
 
 ## 如何验证
 
-工程提供了三个输入样例，可以用重定向快速验证。
+工程提供了四个输入样例，可以用重定向快速验证。
+
+如果在 Windows cmd 中运行，使用以下命令：
+
+```bat
+os_course_design.exe < tests\scheduler_sample.txt
+os_course_design.exe < tests\memory_sample.txt
+os_course_design.exe < tests\filesystem_sample.txt
+os_course_design.exe < tests\concurrency_perf_sample.txt
+```
+
+如果在 Windows PowerShell 中运行，使用以下命令：
+
+```powershell
+Get-Content tests\scheduler_sample.txt | .\os_course_design.exe
+Get-Content tests\memory_sample.txt | .\os_course_design.exe
+Get-Content tests\filesystem_sample.txt | .\os_course_design.exe
+Get-Content tests\concurrency_perf_sample.txt | .\os_course_design.exe
+```
 
 ### 1. 验证处理机调度
 
@@ -247,6 +268,14 @@ Get-Content tests\filesystem_sample.txt | .\os_course_design.exe
 ```
 
 应能看到生产者-消费者、读者-写者、哲学家进餐三个演示均正常结束。
+
+### 5. 验证并发性能优化实验
+
+```powershell
+Get-Content tests\concurrency_perf_sample.txt | .\os_course_design.exe
+```
+
+应能看到单线程基线、多线程全局锁计数、多线程局部汇总三组结果，三组计数均应等于期望总计数。局部汇总策略通常会比全局锁计数耗时更低。
 
 ## 清理重新编译
 

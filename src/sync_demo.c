@@ -8,8 +8,16 @@
 #define CONSUMER_COUNT 2
 #define ITEMS_PER_PRODUCER 5
 #define PHIL_COUNT 5
+#define PERF_THREAD_COUNT 4
+#define PERF_ITERATIONS 1000000ULL
 
 typedef struct { int id; } ThreadArg;
+
+typedef struct {
+    int id;
+    unsigned long long iterations;
+    unsigned long long local_count;
+} PerfArg;
 
 static os_mutex_t log_mutex;
 static int log_ready = 0;
@@ -181,6 +189,82 @@ static void dining_philosophers_demo(void) {
     log_destroy();
 }
 
+static unsigned long long perf_shared_count = 0;
+static os_mutex_t perf_mutex;
+
+static void *global_lock_counter(void *arg) {
+    PerfArg *a = (PerfArg *)arg;
+    for (unsigned long long i = 0; i < a->iterations; ++i) {
+        os_mutex_lock(&perf_mutex);
+        perf_shared_count++;
+        os_mutex_unlock(&perf_mutex);
+    }
+    return 0;
+}
+
+static void *local_counter(void *arg) {
+    PerfArg *a = (PerfArg *)arg;
+    volatile unsigned long long local = 0;
+    for (unsigned long long i = 0; i < a->iterations; ++i) local++;
+    a->local_count = local;
+    return 0;
+}
+
+static void print_perf_result(const char *name, unsigned long long count,
+                              unsigned long long expected, unsigned long long elapsed) {
+    printf("%-22s 计数=%-12llu 期望=%-12llu 耗时=%llums %s\n",
+           name, count, expected, elapsed, count == expected ? "正确" : "异常");
+}
+
+static void concurrency_performance_demo(void) {
+    os_thread_t threads[PERF_THREAD_COUNT];
+    PerfArg args[PERF_THREAD_COUNT];
+    unsigned long long expected = PERF_THREAD_COUNT * PERF_ITERATIONS;
+    unsigned long long start, elapsed;
+
+    printf("\n并发性能优化实验开始。\n");
+    printf("实验参数：线程数=%d，每线程循环次数=%llu，总计数=%llu。\n",
+           PERF_THREAD_COUNT, PERF_ITERATIONS, expected);
+
+    volatile unsigned long long single_count = 0;
+    start = os_time_ms();
+    for (unsigned long long i = 0; i < expected; ++i) single_count++;
+    elapsed = os_time_ms() - start;
+    print_perf_result("单线程基线", single_count, expected, elapsed);
+
+    perf_shared_count = 0;
+    os_mutex_init(&perf_mutex);
+    start = os_time_ms();
+    for (int i = 0; i < PERF_THREAD_COUNT; ++i) {
+        args[i].id = i + 1;
+        args[i].iterations = PERF_ITERATIONS;
+        args[i].local_count = 0;
+        os_thread_create(&threads[i], global_lock_counter, &args[i]);
+    }
+    for (int i = 0; i < PERF_THREAD_COUNT; ++i) os_thread_join(&threads[i]);
+    elapsed = os_time_ms() - start;
+    os_mutex_destroy(&perf_mutex);
+    print_perf_result("多线程全局锁计数", perf_shared_count, expected, elapsed);
+
+    start = os_time_ms();
+    for (int i = 0; i < PERF_THREAD_COUNT; ++i) {
+        args[i].id = i + 1;
+        args[i].iterations = PERF_ITERATIONS;
+        args[i].local_count = 0;
+        os_thread_create(&threads[i], local_counter, &args[i]);
+    }
+    unsigned long long local_total = 0;
+    for (int i = 0; i < PERF_THREAD_COUNT; ++i) {
+        os_thread_join(&threads[i]);
+        local_total += args[i].local_count;
+    }
+    elapsed = os_time_ms() - start;
+    print_perf_result("多线程局部汇总", local_total, expected, elapsed);
+
+    printf("分析：全局锁计数每次循环都进入临界区，锁竞争开销明显；局部计数后汇总减少共享写入，通常耗时更低。\n");
+    printf("并发性能优化实验结束。\n");
+}
+
 static void clear_line(void) {
     int c;
     while ((c = getchar()) != '\n' && c != EOF) {}
@@ -189,13 +273,14 @@ static void clear_line(void) {
 void sync_menu(void) {
     while (1) {
         int choice;
-        printf("\n进程同步与并发控制\n1. 生产者-消费者\n2. 读者-写者\n3. 哲学家进餐\n4. 运行全部演示\n0. 返回上级菜单\n请输入选项: ");
+        printf("\n进程同步与并发控制\n1. 生产者-消费者\n2. 读者-写者\n3. 哲学家进餐\n4. 运行经典同步演示\n5. 并发性能优化实验\n0. 返回上级菜单\n请输入选项: ");
         if (scanf("%d", &choice) != 1) { clear_line(); continue; }
         if (choice == 0) return;
         if (choice == 1) producer_consumer_demo();
         else if (choice == 2) reader_writer_demo();
         else if (choice == 3) dining_philosophers_demo();
         else if (choice == 4) { producer_consumer_demo(); reader_writer_demo(); dining_philosophers_demo(); }
+        else if (choice == 5) concurrency_performance_demo();
         else printf("无效选项。\n");
     }
 }
