@@ -23,10 +23,10 @@ Get-Content tests\filesystem_sample.txt | .\os_course_design.exe
 Linux/macOS shell：
 
 ```bash
-./os_course_design.exe < tests/scheduler_sample.txt
-./os_course_design.exe < tests/memory_sample.txt
-./os_course_design.exe < tests/concurrency_perf_sample.txt
-./os_course_design.exe < tests/filesystem_sample.txt
+./os_course_design < tests/scheduler_sample.txt
+./os_course_design < tests/memory_sample.txt
+./os_course_design < tests/concurrency_perf_sample.txt
+./os_course_design < tests/filesystem_sample.txt
 ```
 
 其中 `concurrency_perf_sample.txt` 会运行课程设计提升部分“并发性能优化实验”，对比单线程基线、多线程全局锁计数、多线程局部汇总三种策略的耗时。

@@ -76,7 +76,7 @@ os_course_design.exe < tests\concurrency_perf_sample.txt
 ## 目录结构
 
 ```text
-操作系统实验/
+os-course-design/
 ├── Makefile
 ├── README.md
 ├── src/
@@ -96,10 +96,21 @@ os_course_design.exe < tests\concurrency_perf_sample.txt
 
 ## 如何编译
 
-在 Windows PowerShell 中进入工程目录：
+在 Windows cmd 或 PowerShell 中进入工程目录：
 
-```powershell
-cd C:\Users\Asus\Desktop\操作系统实验
+```bat
+cd C:\Users\Asus\Desktop\os-course-design
+```
+
+如果本机已安装 GCC，可以直接编译：
+
+```bat
+gcc -std=c99 -Wall -Wextra -O2 -Isrc src/main.c src/scheduler.c src/memory.c src/sync_demo.c src/filesystem.c src/platform_thread.c -o os_course_design.exe
+```
+
+如果使用 Makefile，也可以运行：
+
+```bat
 mingw32-make
 ```
 
