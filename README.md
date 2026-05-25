@@ -52,7 +52,6 @@
 ```text
 操作系统实验/
 ├── Makefile
-├── os_course_design.exe
 ├── README.md
 ├── src/
 │   ├── main.c
@@ -66,8 +65,6 @@
 │   ├── memory_sample.txt
 │   ├── filesystem_sample.txt
 │   └── README.md
-└── report/
-    └── 课程设计报告.md
 ```
 
 ## 如何编译
@@ -257,4 +254,3 @@ Get-Content tests\filesystem_sample.txt | .\os_course_design.exe
 mingw32-make clean
 mingw32-make
 ```
-
